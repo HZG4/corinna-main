@@ -3,39 +3,41 @@ import { currentUser } from '@clerk/nextjs'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
+// 1. FORCE DYNAMIC
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-
   try {
-    // ✅ FIX 2: Initialize Stripe INSIDE the function (Runtime only)
-    const stripe = new Stripe(process.env.STRIPE_SECRET!, {
+    // 2. SAFETY CHECK: Ensure key exists before using it
+    if (!process.env.STRIPE_SECRET) {
+        console.error('Missing STRIPE_SECRET');
+        return new NextResponse('Missing Stripe Secret Key', { status: 500 });
+    }
+
+    // 3. INITIALIZE INSIDE: This prevents the "Build Error" crash
+    const stripe = new Stripe(process.env.STRIPE_SECRET, {
       typescript: true,
       apiVersion: '2024-04-10',
-    })
+    });
 
     const user = await currentUser()
     if (!user) return new NextResponse('User not authenticated', { status: 401 })
 
-    // 1. Create a CLEAN, empty account
-    // We do NOT send Jenny Rosen's data. We let the user fill that in later.
     const account = await stripe.accounts.create({
       country: 'US',
-      type: 'express', // 'express' lets Stripe handle the onboarding UI
+      type: 'express',
       capabilities: {
         card_payments: { requested: true },
         transfers: { requested: true },
       },
       business_type: 'company',
-      // business_profile: { url: ... } // Optional: Add your platform URL here if you want
     })
 
     if (!account) {
       return new NextResponse('Failed to create Stripe account', { status: 500 })
     }
 
-    // 2. Save the account ID to your database immediately
-    // This links your Clerk User to this new Stripe Account
+    // Link Clerk User to Stripe Account
     await client.user.update({
       where: {
         clerkId: user.id,
@@ -45,20 +47,15 @@ export async function GET() {
       },
     })
 
-    // 3. Generate the Account Link
-    // This is the magic link that sends them to Stripe to fill out their forms
-    const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000' // Use the variable we discussed earlier
-    const returnUrl = `${baseUrl}/integration` 
-    const refreshUrl = `${baseUrl}/integration` // If they accidentally close the tab, they go back here
-
+    // Create Account Link
+    const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000'
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: refreshUrl,
-      return_url: returnUrl,
+      refresh_url: `${baseUrl}/integration`,
+      return_url: `${baseUrl}/integration`,
       type: 'account_onboarding',
     })
 
-    // 4. Send the link to the frontend
     return NextResponse.json({
       url: accountLink.url,
     })
