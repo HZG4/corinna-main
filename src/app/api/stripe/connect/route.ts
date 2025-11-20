@@ -5,11 +5,6 @@ import Stripe from 'stripe'
 
 export const dynamic = 'force-dynamic'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET!, {
-  typescript: true,
-  apiVersion: '2024-04-10',
-})
-
 export async function GET() {
 
   try {
@@ -18,7 +13,7 @@ export async function GET() {
       typescript: true,
       apiVersion: '2024-04-10',
     })
-    
+
     const user = await currentUser()
     if (!user) return new NextResponse('User not authenticated', { status: 401 })
 
