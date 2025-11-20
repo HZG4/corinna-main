@@ -11,7 +11,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET!, {
 })
 
 export async function GET() {
+
   try {
+    // ✅ FIX 2: Initialize Stripe INSIDE the function (Runtime only)
+    const stripe = new Stripe(process.env.STRIPE_SECRET!, {
+      typescript: true,
+      apiVersion: '2024-04-10',
+    })
+    
     const user = await currentUser()
     if (!user) return new NextResponse('User not authenticated', { status: 401 })
 
