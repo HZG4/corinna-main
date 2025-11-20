@@ -4,6 +4,8 @@ import InfoBar from '@/components/infobar'
 import { currentUser } from '@clerk/nextjs'
 import React from 'react'
 
+export const dynamic = 'force-dynamic'
+
 type Props = {}
 
 const Page = async (props: Props) => {

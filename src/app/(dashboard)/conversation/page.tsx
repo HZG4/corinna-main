@@ -5,6 +5,8 @@ import InfoBar from '@/components/infobar'
 import { Separator } from '@/components/ui/separator'
 import React from 'react'
 
+export const dynamic = 'force-dynamic'
+
 type Props = {}
 
 const ConversationPage = async (props: Props) => {

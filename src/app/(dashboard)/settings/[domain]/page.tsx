@@ -6,6 +6,8 @@ import ProductTable from '@/components/products'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
+export const dynamic = 'force-dynamic'
+
 type Props = { params: { domain: string } }
 
 const DomainSettingsPage = async ({ params }: Props) => {
