@@ -5,13 +5,10 @@ import { extractEmailsFromString, extractURLfromString } from '@/lib/utils'
 import { onRealTimeChat } from '../conversation'
 import { clerkClient } from '@clerk/nextjs'
 import { onMailer } from '../mailer'
-import {TextServiceClient} from '@google-ai/generativelanguage'
+import OpenAi from 'openai'
 
-const googleClient = new TextServiceClient({
-  // Use API key from environment to avoid relying on Application Default Credentials.
-  // Set `GOOGLE_API_KEY` in your `.env.local` (local only):
-  // GOOGLE_API_KEY=your_gemini_api_key_here
-  apiKey: process.env.GOOGLE_API_KEY,
+const openai = new OpenAi({
+  apiKey: process.env.OPEN_AI_KEY,
 })
 
 export const onStoreConversations = async (
@@ -208,40 +205,48 @@ export const onAiChatBotAssistant = async (
           author
         )
 
-        const buildPrompt = (messages: { role: string; content: string }[]) => {
-          // Flatten messages into a single prompt string for the text model
-          return messages
-            .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
-            .join('\n')
-        }
+        const chatCompletion = await openai.chat.completions.create({
+          messages: [
+            {
+              role: 'assistant',
+              content: `
+              You will get an array of questions that you must ask the customer. 
+              
+              Progress the conversation using those questions. 
+              
+              Whenever you ask a question from the array i need you to add a keyword at the end of the question (complete) this keyword is extremely important. 
+              
+              Do not forget it.
 
-        const promptSystem = `You will get an array of questions that you must ask the customer.\n\nProgress the conversation using those questions.\n\nWhenever you ask a question from the array i need you to add a keyword at the end of the question (complete) this keyword is extremely important.\n\nDo not forget it.\n\nonly add this keyword when your asking a question from the array of questions. No other question satisfies this condition\n\nAlways maintain character and stay respectfull.\n\nThe array of questions : [${chatBotDomain.filterQuestions
-          .map((questions) => questions.question)
-          .join(', ')}]\n\nif the customer says something out of context or inapporpriate. Simply say this is beyond you and you will get a real user to continue the conversation. And add a keyword (realtime) at the end.\n\nif the customer agrees to book an appointment send them this link http://localhost:3000/portal/${id}/appointment/${
-          checkCustomer?.customer[0].id
-        }\n\nif the customer wants to buy a product redirect them to the payment page http://localhost:3000/portal/${id}/payment/${
-          checkCustomer?.customer[0].id
-        }\n`
+              only add this keyword when your asking a question from the array of questions. No other question satisfies this condition
 
-        const messagesForModel = [
-          { role: 'system', content: promptSystem },
-          ...chat,
-          { role: 'user', content: message },
-        ]
+              Always maintain character and stay respectfull.
 
-        const promptText = buildPrompt(messagesForModel)
+              The array of questions : [${chatBotDomain.filterQuestions
+                .map((questions) => questions.question)
+                .join(', ')}]
 
-        const [googleResponse] = await googleClient.generateText({
-          model: 'models/text-bison-001',
-          prompt: { text: promptText },
+              if the customer says something out of context or inapporpriate. Simply say this is beyond you and you will get a real user to continue the conversation. And add a keyword (realtime) at the end.
+
+              if the customer agrees to book an appointment send them this link http://localhost:3000/portal/${id}/appointment/${
+                checkCustomer?.customer[0].id
+              }
+
+              if the customer wants to buy a product redirect them to the payment page http://localhost:3000/portal/${id}/payment/${
+                checkCustomer?.customer[0].id
+              }
+          `,
+            },
+            ...chat,
+            {
+              role: 'user',
+              content: message,
+            },
+          ],
+          model: 'gpt-3.5-turbo',
         })
 
-        const candidate: any = googleResponse?.candidates?.[0]
-        const chatCompletionText: string = candidate
-          ? candidate.content || (candidate.output && candidate.output[0]?.content) || (candidate.message && candidate.message.content) || ''
-          : ''
-
-        if (chatCompletionText.includes('(realtime)')) {
+        if (chatCompletion.choices[0].message.content?.includes('(realtime)')) {
           const realtime = await client.chatRoom.update({
             where: {
               id: checkCustomer?.customer[0].chatRoom[0].id,
@@ -252,10 +257,13 @@ export const onAiChatBotAssistant = async (
           })
 
           if (realtime) {
-              const response = {
-                role: 'assistant',
-                content: chatCompletionText.replace('(realtime)', ''),
-              }
+            const response = {
+              role: 'assistant',
+              content: chatCompletion.choices[0].message.content.replace(
+                '(realtime)',
+                ''
+              ),
+            }
 
             await onStoreConversations(
               checkCustomer?.customer[0].chatRoom[0].id!,
@@ -292,8 +300,10 @@ export const onAiChatBotAssistant = async (
           }
         }
 
-        if (chatCompletionText) {
-          const generatedLink = extractURLfromString(chatCompletionText as string)
+        if (chatCompletion) {
+          const generatedLink = extractURLfromString(
+            chatCompletion.choices[0].message.content as string
+          )
 
           if (generatedLink) {
             const link = generatedLink[0]
@@ -314,7 +324,7 @@ export const onAiChatBotAssistant = async (
 
           const response = {
             role: 'assistant',
-            content: chatCompletionText,
+            content: chatCompletion.choices[0].message.content,
           }
 
           await onStoreConversations(
@@ -327,35 +337,31 @@ export const onAiChatBotAssistant = async (
         }
       }
       console.log('No customer')
+      const chatCompletion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: 'assistant',
+            content: `
+            You are a highly knowledgeable and experienced sales representative for a ${chatBotDomain.name} that offers a valuable product or service. Your goal is to have a natural, human-like conversation with the customer in order to understand their needs, provide relevant information, and ultimately guide them towards making a purchase or redirect them to a link if they havent provided all relevant information.
+            Right now you are talking to a customer for the first time. Start by giving them a warm welcome on behalf of ${chatBotDomain.name} and make them feel welcomed.
 
-      const buildPrompt = (messages: { role: string; content: string }[]) => {
-        return messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n')
-      }
+            Your next task is lead the conversation naturally to get the customers email address. Be respectful and never break character
 
-      const promptSystem2 = `You are a highly knowledgeable and experienced sales representative for a ${chatBotDomain.name} that offers a valuable product or service. Your goal is to have a natural, human-like conversation with the customer in order to understand their needs, provide relevant information, and ultimately guide them towards making a purchase or redirect them to a link if they havent provided all relevant information. Right now you are talking to a customer for the first time. Start by giving them a warm welcome on behalf of ${chatBotDomain.name} and make them feel welcomed. Your next task is lead the conversation naturally to get the customers email address. Be respectful and never break character.`
-
-      const messagesForModel2 = [
-        { role: 'system', content: promptSystem2 },
-        ...chat,
-        { role: 'user', content: message },
-      ]
-
-      const promptText2 = buildPrompt(messagesForModel2)
-
-      const [googleResponse2] = await googleClient.generateText({
-        model: 'models/text-bison-001',
-        prompt: { text: promptText2 },
+          `,
+          },
+          ...chat,
+          {
+            role: 'user',
+            content: message,
+          },
+        ],
+        model: 'gpt-3.5-turbo',
       })
 
-      const candidate2: any = googleResponse2?.candidates?.[0]
-      const chatCompletionText2: string = candidate2
-        ? candidate2.content || (candidate2.output && candidate2.output[0]?.content) || (candidate2.message && candidate2.message.content) || ''
-        : ''
-
-      if (chatCompletionText2) {
+      if (chatCompletion) {
         const response = {
           role: 'assistant',
-          content: chatCompletionText2,
+          content: chatCompletion.choices[0].message.content,
         }
 
         return { response }

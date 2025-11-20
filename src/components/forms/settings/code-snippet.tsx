@@ -11,6 +11,7 @@ type Props = {
 const CodeSnippet = ({ id }: Props) => {
   const { toast } = useToast()
   let snippet = `
+  document.addEventListener("DOMContentLoaded", () => {
     const iframe = document.createElement("iframe");
     
     const iframeStyles = (styleString) => {
@@ -39,6 +40,7 @@ const CodeSnippet = ({ id }: Props) => {
         iframe.height = dimensions.height
         iframe.contentWindow.postMessage("${id}", "http://localhost:3000/")
     })
+  });
         `
 
   return (

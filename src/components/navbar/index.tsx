@@ -11,6 +11,19 @@ function NavBar() {
           src="/images/logo.png"
           alt="LOGO"
           sizes="100vw"
+          className="block dark:hidden"
+          style={{
+            width: '100px',
+            height: 'auto',
+          }}
+          width={0}
+          height={0}
+        />
+        <Image
+          src="/images/logo-dark.png"
+          alt="LOGO"
+          sizes="100vw"
+          className="hidden dark:block"
           style={{
             width: '100px',
             height: 'auto',
@@ -19,7 +32,7 @@ function NavBar() {
           height={0}
         />
       </div>
-      <ul className="gap-5 justify-between self-stretch my-auto text-sm leading-5 text-neutral-700 max-md:flex-wrap max-md:max-w-full font-normal hidden md:flex">
+      <ul className="gap-5 justify-between self-stretch my-auto text-sm leading-5 text-foreground-700 max-md:flex-wrap max-md:max-w-full font-normal hidden md:flex">
         <li>Home</li>
         <li>Pricing</li>
         <li>News Room</li>

@@ -122,11 +122,17 @@ export async function GET() {
                 })
 
                 if (saveAccountId) {
+                  const baseUrl =
+                    process.env.NEXT_PUBLIC_APP_URL ??
+                    process.env.APP_URL ??
+                    'http://localhost:3000'
+
+                  const integrationUrl = `${baseUrl}/integration`
+
                   const accountLink = await stripe.accountLinks.create({
                     account: account.id,
-                    refresh_url:
-                      'http://localhost:3000/callback/stripe/refresh',
-                    return_url: 'http://localhost:3000/callback/stripe/success',
+                    refresh_url: integrationUrl,
+                    return_url: integrationUrl,
                     type: 'account_onboarding',
                     collection_options: {
                       fields: 'currently_due',
