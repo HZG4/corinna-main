@@ -4,16 +4,22 @@ import { client } from '@/lib/prisma'
 import { currentUser } from '@clerk/nextjs'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET!, {
-  typescript: true,
-  apiVersion: '2024-04-10',
-})
-
 export const onCreateCustomerPaymentIntentSecret = async (
   amount: number,
   stripeId: string
 ) => {
   try {
+    const secret = process.env.STRIPE_SECRET
+    if (!secret) {
+      console.error('Missing STRIPE_SECRET environment variable')
+      return
+    }
+
+    const stripe = new Stripe(secret, {
+      typescript: true,
+      apiVersion: '2024-04-10',
+    })
+
     const paymentIntent = await stripe.paymentIntents.create(
       {
         currency: 'usd',
@@ -87,6 +93,17 @@ export const onGetStripeClientSecret = async (
   item: 'STANDARD' | 'PRO' | 'ULTIMATE'
 ) => {
   try {
+    const secret = process.env.STRIPE_SECRET
+    if (!secret) {
+      console.error('Missing STRIPE_SECRET environment variable')
+      return
+    }
+
+    const stripe = new Stripe(secret, {
+      typescript: true,
+      apiVersion: '2024-04-10',
+    })
+
     const amount = setPlanAmount(item)
     const paymentIntent = await stripe.paymentIntents.create({
       currency: 'usd',

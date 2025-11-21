@@ -17,6 +17,8 @@ import Link from 'next/link'
 import parse from 'html-react-parser'
 import { getMonthName } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const posts:
     | {

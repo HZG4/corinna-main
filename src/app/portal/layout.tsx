@@ -1,6 +1,8 @@
 import { PortalBanner } from '@/components/portal/banner'
 import React from 'react'
 
+export const dynamic = 'force-dynamic'
+
 type Props = {
   children: React.ReactNode
 }

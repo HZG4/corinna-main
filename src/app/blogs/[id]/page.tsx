@@ -4,6 +4,8 @@ import { getMonthName } from '@/lib/utils'
 import parse from 'html-react-parser'
 import React from 'react'
 
+export const dynamic = 'force-dynamic'
+
 type Props = { params: { id: string } }
 
 const PostPage = async ({ params }: Props) => {
