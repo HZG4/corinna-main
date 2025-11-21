@@ -1,10 +1,10 @@
 import { client } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-// 1. FORCE DYNAMIC
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET() {
   try {
@@ -20,8 +20,10 @@ export async function GET() {
       apiVersion: '2024-04-10',
     });
 
-    const user = await currentUser()
-    if (!user) return new NextResponse('User not authenticated', { status: 401 })
+    const { userId } = auth()
+    if (!userId) {
+      return new NextResponse('User not authenticated', { status: 401 })
+    }
 
     const account = await stripe.accounts.create({
       country: 'US',
@@ -40,7 +42,7 @@ export async function GET() {
     // Link Clerk User to Stripe Account
     await client.user.update({
       where: {
-        clerkId: user.id,
+        clerkId: userId,
       },
       data: {
         stripeId: account.id,
