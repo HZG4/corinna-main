@@ -43,7 +43,7 @@ export async function GET() {
 
     // 3. Generate the Account Link
     // This is the magic link that sends them to Stripe to fill out their forms
-    const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000' // Use the variable we discussed earlier
+    const baseUrl = process.env.NEXT_PUBLIC_DOMAIN // Use the variable we discussed earlier
     const returnUrl = `${baseUrl}/integration` 
     const refreshUrl = `${baseUrl}/integration` // If they accidentally close the tab, they go back here
 

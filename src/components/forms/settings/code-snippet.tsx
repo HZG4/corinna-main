@@ -29,16 +29,16 @@ const CodeSnippet = ({ id }: Props) => {
           }
       \`)
       
-      iframe.src = "${process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000'}/chatbot"
+      iframe.src = "${process.env.NEXT_PUBLIC_DOMAIN}/chatbot"
       iframe.classList.add('chat-frame')
       document.body.appendChild(iframe)
       
       window.addEventListener("message", (e) => {
-        if(e.origin !== "${process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000'}") return null
+        if(e.origin !== "${process.env.NEXT_PUBLIC_DOMAIN}") return null
         let dimensions = JSON.parse(e.data)
         iframe.width = dimensions.width
         iframe.height = dimensions.height
-        iframe.contentWindow.postMessage("${id}", "${process.env.NEXT_PUBLIC_DOMAIN || 'http://localhost:3000'}")
+        iframe.contentWindow.postMessage("${id}", "${process.env.NEXT_PUBLIC_DOMAIN}")
       })
     });
   `
