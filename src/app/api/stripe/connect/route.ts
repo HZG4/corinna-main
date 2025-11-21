@@ -6,12 +6,12 @@ import Stripe from 'stripe'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export async function GET() {
+export async function POST() {
   try {
     // 2. SAFETY CHECK: Ensure key exists before using it
     if (!process.env.STRIPE_SECRET) {
         console.error('Missing STRIPE_SECRET');
-        return new NextResponse('Missing Stripe Secret Key', { status: 500 });
+        return NextResponse.json({ error: 'Missing Stripe Secret Key' }, { status: 500 });
     }
 
     // 3. INITIALIZE INSIDE: This prevents the "Build Error" crash
@@ -22,7 +22,7 @@ export async function GET() {
 
     const { userId } = auth()
     if (!userId) {
-      return new NextResponse('User not authenticated', { status: 401 })
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 })
     }
 
     const account = await stripe.accounts.create({
@@ -64,6 +64,6 @@ export async function GET() {
 
   } catch (error) {
     console.error('An error occurred when calling the Stripe API:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
